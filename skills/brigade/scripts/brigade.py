@@ -857,6 +857,12 @@ def report(restaurant, write=True):
 
 MEASURING_STATIONS = ("perf-issue", "hillclimb", "eval")
 LAND = Path(__file__).resolve().parents[2] / "landing" / "scripts" / "land.py"
+# Built skills keep roles.py under pstack-runtime; the source tree keeps it under t3/scripts.
+ROLES = next((path for path in (Path(__file__).resolve().parents[2] / "pstack-runtime" / "scripts" / "roles.py",
+                                Path(__file__).resolve().parents[3] / "scripts" / "roles.py") if path.exists()), None)
+SEAT_RULE = ("Seat rule. Copy the Mode value above into --brief-mode on every roles.py mode and roles.py show call you make, "
+             "and pass no other mode flag. Never pass --session-mode. Mode source names where your launcher's decision came from. "
+             "It does not make this thread a session.")
 
 
 def holder(restaurant, dish):
@@ -1144,10 +1150,12 @@ def brief(restaurant, ident, goal, acceptance, verify, paths, lease, base, conte
         dish = restaurant.update("dishes.tsv", ident, "dish", branch=f"{slug(restaurant.meta['restaurant'])}/{ident.lower()}")
     tickets = {row["id"]: row for row in restaurant.rows("rail.tsv")}
     land = LAND
+    mode_lines = worker_mode_lines(restaurant, ident, paths)
     report = restaurant.dir / "reports" / f"{ident}.md"
     findings = restaurant.dir / "reports" / f"{ident}-review.md"
     lines = [
         f"Use the poteto-mode skill and its `{dish['station']}` playbook.", "",
+        *mode_lines, SEAT_RULE, "Gate: brigade", "",
         f"GOAL: {goal}",
         f"PURPOSE: {menu_purpose(restaurant)}",
         f"TICKETS: " + "; ".join(f"{t}: {tickets[t]['summary']}" for t in dish["tickets"].split(",") if t in tickets), "",
@@ -1172,6 +1180,19 @@ def brief(restaurant, ident, goal, acceptance, verify, paths, lease, base, conte
     text = "\n".join(lines) + "\n"
     restaurant.write(Path("briefs") / f"{ident}.md", text)
     return text
+
+
+def worker_mode_lines(restaurant, ident, paths):
+    """The Mode: and Mode source: lines roles.py resolves for this dish's worker, counting its send-backs."""
+    if ROLES is None:
+        raise BrigadeError("roles.py not found; a brief carries the worker's mode")
+    send_backs = sum(1 for row in restaurant.rows("pass.tsv") if row["dish"] == ident and row["verdict"] == "send-back")
+    result = subprocess.run([sys.executable, str(ROLES), "mode", "--cwd", restaurant.meta["projectRoot"],
+                             "--paths", paths, "--send-backs", str(send_backs)], capture_output=True, text=True)
+    lines = [line for line in result.stdout.splitlines() if line.startswith(("Mode:", "Mode source:"))]
+    if result.returncode != 0 or len(lines) != 2:
+        raise BrigadeError(f"roles.py mode failed: {(result.stderr or result.stdout).strip()}")
+    return lines
 
 
 def attempt_starts(restaurant, dish):

@@ -528,6 +528,23 @@ class BrigadeTest(unittest.TestCase):
             self.assertIn(part, text)
         self.assertEqual((self.at / "briefs/D1.md").read_text().strip(), text)
 
+    def test_brief_carries_the_workers_mode_seat_rule_and_brigade_gate(self):
+        self.open()
+        self.fire_one()
+        self.brigade("set", "--thread", "thread-coord")
+        args = ("brief", "D1", "--goal", "Cold start under 400 ms.", "--acceptance", "Median cold start below 400 ms",
+                "--verify", "npm run perf", "--paths", "src/boot.ts", "--lease", "L4", "--base", "origin/main")
+        lines = self.brigade(*args).splitlines()
+        self.assertTrue(lines[2].startswith("Mode: "))
+        self.assertTrue(lines[3].startswith("Mode source: "))
+        self.assertTrue(lines[4].startswith("Seat rule. Copy the Mode value above"))
+        self.assertEqual(lines[5], "Gate: brigade")
+        self.brigade("dish", "D1", "--state", "in-progress", "--task", "t-1")
+        for sha in ("abc", "def"):
+            self.brigade("pass", "record", "D1", "--sha", sha, "--verdict", "send-back", "--author", "grok/grok-4.7", "--verifier", CODEX)
+        lines = self.brigade(*args).splitlines()
+        self.assertEqual(lines[2:4], ["Mode: full", "Mode source: escalated: second send-back"])
+
     def test_brief_refuses_when_no_coordinator_thread_is_recorded(self):
         self.open()
         self.fire_one(station="bug-fix")
