@@ -14,4 +14,4 @@ Be scientific. Every shipped line traces to runtime evidence. Belt-and-suspender
    This is the canonical **sequence-verifiable-units** principle skill, the failing test first and the fix on top.
 6. Run **Opening a PR**.
 
-**Reply:** what was broken, root cause, fix, how you verified. Paste failing-then-passing repro output verbatim.
+**Reply:** what was broken, root cause, fix, how you verified. Paste failing-then-passing repro output verbatim. When the project's rules restrict customer or secret values, redact them and point at the private evidence path instead.
