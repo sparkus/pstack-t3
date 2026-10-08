@@ -60,7 +60,7 @@ Tests alone are not sufficient verification. A PR is verified only when its unit
 - [ ] Run the repo's lint and typecheck once before the PR-facing push. Push with hooks on.
 - [ ] Run `/deslop` before each commit (if installed, otherwise an **unslop** pass over the diff) and `/no-comments` before review.
 - [ ] Triage every Bugbot and security-reviewer comment per `../references/bugbot-triage.md`.
-- [ ] Rebase onto current trunk before the code-ready report and babysit. Keep that merge base in fix rounds. Rebase again only at merge prep, on a `git merge-tree` conflict with trunk, or on a CI failure that comes from a change on trunk.
+- [ ] Before the code-ready report, rebase onto current trunk only on a `git merge-tree` conflict with trunk. Keep the merge base in fix rounds. Rebase again only on a merge-tree conflict, on a CI failure that comes from a change on trunk, or at merge prep when the forge requires an up-to-date branch.
 
 ### Verdict and merge, for every PR
 
@@ -129,7 +129,7 @@ Each live lane is its own `delegate_task` child in its own worktree at the PR he
 
 - [ ] Root's clean verdict at the exact head SHA.
 - [ ] Bugbot triage done.
-- [ ] Rebased onto current trunk after the verdict, patch-id unchanged.
+- [ ] Merged at the verified head, or rebased after the verdict with the patch-id unchanged.
 - [ ] <The owner squash-merges its own PR, or the root appends it to the base-branch stack and the operator lands it bottom-up.>
 
 ## Close the program

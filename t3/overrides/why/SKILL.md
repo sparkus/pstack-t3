@@ -77,7 +77,7 @@ Map each available MCP to one evidence category:
 6. Error / exception tracking
 7. Product analytics warehouse
 
-Source control is always available through git and `gh`. For the other six, classify using the MCP name, server instructions, tool names, and resource descriptors. If an MCP could fit more than one category, choose the one matching its primary evidence. Record ambiguous cases in the coverage map.
+Source control is always available through git and `gh`. Read the project's AGENTS.md first. A tracker it names with a CLI, such as Beads `bd`, fills category 2 through that CLI even when no MCP serves it. For the rest, classify using the MCP name, server instructions, tool names, and resource descriptors. If an MCP could fit more than one category, choose the one matching its primary evidence. Record ambiguous cases in the coverage map.
 
 Aim for a complete **coverage map**, not a minimal one. Document the null, don't skip the search.
 
