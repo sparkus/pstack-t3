@@ -13,7 +13,7 @@ Defer to Comment Sicko's fresh perspective.
 
 ## Scope
 
-Use the caller's files or diff. Otherwise use the current diff against the base branch, default `main`, including the working tree.
+This skill edits files, so a read-only task or reviewer never runs it. T3 has no read-only flag, so the brief is the only guard. Use the caller's files or diff. Otherwise use the current diff against the base branch, default `main`, including the working tree.
 
 [The runtime's Modes section](../pstack-runtime/SKILL.md#modes) sets the mode lines of every brief this skill writes and how its spawns run in light mode.
 
