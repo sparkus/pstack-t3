@@ -420,7 +420,7 @@ After a T3 restart, assume a child is gone unless `task_status` shows `working` 
 
 ## Visual reports
 
-A report whose substance is a table of units, a timeline, a frontier, or a chart goes to the user as a page. Write one self-contained HTML document, check it with `html_preview` and fix every console error, then publish it with `html_render` and the `contentHeight` from the preview, before the final reply. Use the theme variables the tools describe, and keep `html`, `body`, and the outermost element without a background. The reply then adds only what the page does not show: the decisions waiting on the user, links, and the store path. Numbers on the page come from the store or the tables, as in the text report it replaces. A short status with no table stays text.
+A report whose substance is a table of units, a timeline, a frontier, or a chart goes to the user as a page. Write one self-contained HTML document, check it with `html_preview` and fix every console error, then publish it with `html_render` and the `contentHeight` from the preview, before the final reply. Use the theme variables the tools describe, and keep `html`, `body`, and the outermost element without a background. The reply then adds only what the page does not show, which is the decisions waiting on the user, the links, and the store path. Numbers on the page come from the store or the tables, as in the text report it replaces. A short status with no table stays text.
 
 ## History
 
