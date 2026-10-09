@@ -29,6 +29,7 @@ Tool names may carry a harness prefix, such as `mcp__t3-code__delegate_task` or 
 | ask the user (`AskQuestion`) | The host's question tool if it has one, otherwise a short question in the reply. |
 | todolist | The host's todo tool if it has one, otherwise a checklist in the work log. |
 | PR you opened or now drive | Register it with `link_pull_request`. |
+| status page, dashboard, report table | `html_preview`, then `html_render`. See [Visual reports](#visual-reports). |
 
 ## Deadlines
 
@@ -367,7 +368,18 @@ Create top-level threads only when the user asked for separate threads or invoke
 - Follow a thread with `t3_thread_wait` and read it with `t3_thread_read` (use `afterPosition` to read only what is new). Send follow-ups with `t3_thread_send`, interrupt with `t3_thread_interrupt`.
 - A thread launched with `t3_thread_launch` has no parent. Its finished turn does not wake the launcher. A launcher that needs a report names the message the launched thread sends with `t3_thread_send`.
 - Autopilot-full, Autopilot-stack, and Orchestrate owners send their report lines to the root or coordinator with `t3_thread_send` and `mode: "auto"`. `auto` starts an idle recipient, steers a fully active turn, and queues behind a turn that cannot accept steering yet. It does not merge reports into one turn. The recipient handles every report, steered or queued, and runs the playbook's head-specific checks on the head each report names. Arrival order never makes a head current. Brigade's event lines to an executive admin stay on `mode: "queue"`, as [Reporting to an executive admin](../brigade/SKILL.md#reporting-to-an-executive-admin) states.
+- A message you queued earlier can sit behind a long turn. To deliver it now, find its `queuedRunId` with `t3_queue_list` on the recipient, read the recipient's `activeRunId` with `t3_thread_read`, and call `t3_queue_promote_to_steer` with both. The message joins the active run, and the queued run then reports `cancelled`, so a wait on that run is not a failure. Send new corrections with `mode: "steer"` or `"auto"` instead of queuing them.
+- Change a launched thread's model in place with `t3_thread_configure` and a seat resolved per [Roles](#roles), as a `modelSelection` built like the one above. Confirm the applied options per [Delegation](#delegation) step 3. Use it to escalate an owner that keeps failing the same gate, instead of relaunching it and paying its orientation again. It may change the provider. The next turn runs on the new seat with the thread's history. It does not change permission modes. A failed child task is respawned per [Failure handling](#failure-handling), never reconfigured.
 - `create_threads` makes up to 20 threads sharing this checkout. Use it only for read-only fan-out the user wants visible as threads.
+
+### Forks
+
+`t3_thread_fork` copies a thread's context into a new top-level thread, from `sourcePoint` `{"type": "latest_stable"}`, a run, or a checkpoint. The fork inherits the source's configuration. It starts idle with no run and runs only when it receives a message. `t3_thread_read` on it reports `relationshipToParent: "fork"` and the source as `parentThreadId`. Children start fresh by default per [Fresh children by default](#fresh-children-by-default), because a fresh brief keeps the scope tight. Fork only where the orientation is the expensive part and is the same for the new thread, such as an Orchestrate sub-coordinator split from the coordinator once the program is framed, or a second planner that should start from the same investigation.
+
+- A fork never writes code. It has the source's `worktreePath` and `branch`, so it is a coordinator, planner, or reviewer. Writers are children or launched threads isolated per [Isolation](#isolation).
+- Send the fork its scope with `t3_thread_send` right after the fork call. That message names the fork's slice, its report line, and the source's thread ID. Without it the fork has the source's goal and no slice of its own.
+- Follow a fork as a launched thread: `t3_thread_wait`, `t3_thread_read`, and its explicit `t3_thread_send` report.
+- `t3_thread_merge_back` copies a fork's context into a related thread in the same project. Use it only when the source needs the fork's reasoning, not only its result, because a merge grows the source's context. The transfer stays `pending` in `t3_thread_transfers` until the target's next turn consumes it, so the target sees the fork's work only from that turn on. A one-line report stays the default.
 
 ## Scheduling
 
@@ -382,6 +394,7 @@ Create top-level threads only when the user asked for separate threads or invoke
 - The tick prompt must stand alone. Point it at the work log or store so a run can rebuild state from disk.
 - Report the returned cadence and `nextRunAt`. Delete the schedule with `delete_scheduled_task` when the done predicate holds. List with `list_scheduled_tasks`.
 - Pause a schedule with `update_scheduled_task` and `enabled: false`. Resume by setting it back to true.
+- When something the next tick acts on has already happened, such as a merge you saw, an answered gate, or a finished wave, call `run_scheduled_task_now` with the schedule's ID instead of waiting out the cadence. Each call is one extra run, and the next scheduled run counts from it, so read `nextRunAt` from the result. A returned result means T3 dispatched the run, not that the turn finished. It requires a full-access or default caller. Under another mode, do the tick's work in this turn.
 - A finite program pauses a schedule that can only repeat an unanswered user decision. A finite program has a done predicate, as in Autopilot-full, Autopilot-stack, Orchestrate, and Autonomous run. The rule covers an audit or progress schedule when no item has runnable work and its next run can only raise the same user decision again.
 - Write the decision and that schedule's ID to the work log or store the tick prompt names. Raise the decision once. Then call `update_scheduled_task` with that ID and `enabled: false`, and end the turn.
 - On an answer that permits work, call `update_scheduled_task` with the same ID and `enabled: true`. On an answer that keeps the work parked, record the answer and leave the schedule paused. When the done predicate holds, delete the schedule with `delete_scheduled_task`. After a T3 restart, find the paused schedule with `list_scheduled_tasks` and the recorded ID.
@@ -404,6 +417,10 @@ After a T3 restart, assume a child is gone unless `task_status` shows `working` 
 - Devices and simulators: `device_list`, `device_open`, `device_screenshot`, `device_close`.
 - CLIs and TUIs: run them in the terminal and assert on output.
 - A project `verify-*` skill beats all of these when one exists.
+
+## Visual reports
+
+A report whose substance is a table of units, a timeline, a frontier, or a chart goes to the user as a page. Write one self-contained HTML document, check it with `html_preview` and fix every console error, then publish it with `html_render` and the `contentHeight` from the preview, before the final reply. Use the theme variables the tools describe, and keep `html`, `body`, and the outermost element without a background. The reply then adds only what the page does not show: the decisions waiting on the user, links, and the store path. Numbers on the page come from the store or the tables, as in the text report it replaces. A short status with no table stays text.
 
 ## History
 
