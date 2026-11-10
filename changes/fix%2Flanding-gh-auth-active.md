@@ -1,0 +1,2 @@
+- kind fix
+- `land.py init` in `human` or `merge` mode accepts a gh release without `gh auth status --active`: when gh reports `unknown flag: --active`, landing retries `gh auth status --hostname github.com` and refuses only if that fails too
