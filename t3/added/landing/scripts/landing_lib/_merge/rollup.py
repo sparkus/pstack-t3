@@ -175,8 +175,8 @@ def merge_blocker(store, url):
     names is a tuple of non-empty strings. Field 7 is the @tsv form of their JSON array.
     tsv_field_text reverses that escaping before the array is read.
     A field count other than 7, or a field 7 that is not a JSON list of strings after that, raises Infrastructure.
-    With an advisorySuffix in the contract the query has an eighth field. A failed or pending check from it
-    counts as a blocker again when the trunk requires its name or the required contexts cannot be read.
+    With an advisorySuffix in the contract the query has an eighth field. A check from it is advisory only
+    when the required contexts can be read and do not name it. Any other failed or pending one is a blocker.
     advisory holds the rows that stayed advisory.
     """
     suffix = store.contract.get("advisorySuffix") or ""
@@ -195,11 +195,13 @@ def merge_blocker(store, url):
             or fields[4] not in ("true", "false")):
         raise seam.Infrastructure(f"could not read checks for {url}: unparseable check rollup")
     pending, failed = int(fields[1]), fields[2]
-    contexts = seam.read_required_contexts(store) if any(row[2] != "passed" for row in advisory) else ()
+    contexts = seam.read_required_contexts(store) if advisory else ()
     kept = []
     for name, result, kind in advisory:
-        if kind == "passed" or (contexts is not None and name not in contexts):
+        if contexts is not None and name not in contexts:
             kept.append((name, result, kind))
+        elif kind == "passed":
+            continue
         elif kind == "failed":
             failed = f"{failed},{name}" if failed else name
         else:
@@ -218,7 +220,9 @@ def record_advisory(store, ident, candidate, checks):
         db.execute("INSERT OR REPLACE INTO contract VALUES (?, ?)", (ADVISORY_RESULTS, json.dumps(raw)))
 
 def advisory_results(store, row):
-    """[name, result] pairs last read for this entry's candidate, or []."""
+    """[name, result] pairs last read for this entry's candidate, or [] while the contract sets no advisorySuffix."""
+    if not store.contract.get("advisorySuffix"):
+        return []
     record = (store.contract.get(ADVISORY_RESULTS) or {}).get(str(row["id"]))
     if not isinstance(record, dict) or record.get("candidate") != row["candidate"]:
         return []

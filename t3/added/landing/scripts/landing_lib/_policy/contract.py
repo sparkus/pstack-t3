@@ -216,7 +216,7 @@ def init(path, trunk, mode, remote, base, checks, setup, batch, timeout, merge_m
             if advisory_suffix:
                 db.execute("INSERT OR REPLACE INTO contract VALUES ('advisorySuffix', ?)", (json.dumps(advisory_suffix),))
             elif advisory_suffix is not None:
-                db.execute("DELETE FROM contract WHERE key = 'advisorySuffix'")
+                db.execute("DELETE FROM contract WHERE key IN ('advisorySuffix', 'advisoryChecks')")
             # The lane ref moves before COMMIT, so a refused ref rolls the contract back with it.
             if lane_sha:
                 created = seam.git("update-ref", lane, lane_sha, "", cwd=repo, check=False)

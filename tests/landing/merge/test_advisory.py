@@ -103,6 +103,29 @@ class LandingTest(MergeBase, LandingTestBase):
             self.assertIn("waiting for required checks", status)
             self.assertNotIn("advisory", status)
 
+    def test_a_required_check_with_the_suffix_that_passed_is_not_shown_as_advisory(self):
+        with self.fake_gh():
+            self.require("test", LANE)
+            self.post(PASSED, dict(LANE_FAILED, conclusion="SUCCESS"))
+            self.init_advisory()
+            self.queue_one()
+            self.assertEqual(self.land("land"), "landed E1 (r/D1)")
+            self.assertNotIn("advisory", self.land("status", "E1"))
+            self.assertNotIn("advisory", json.loads(self.land("status", "--holder", "r/D1", "--json"))[0])
+
+    def test_clearing_the_suffix_drops_the_advisory_results_of_a_landed_entry(self):
+        with self.fake_gh():
+            self.require("test")
+            self.post(PASSED, LANE_FAILED)
+            self.init_advisory()
+            self.queue_one()
+            self.assertEqual(self.land("land"), "landed E1 (r/D1)")
+            self.assertIn("advisory", self.land("status", "E1"))
+            self.init_advisory("")
+            self.assertNotIn("advisoryChecks", self.contract())
+            self.assertNotIn("advisory", self.land("status", "E1"))
+            self.assertNotIn("advisory", json.loads(self.land("status", "--holder", "r/D1", "--json"))[0])
+
     def test_a_failed_advisory_check_bounces_when_the_required_checks_cannot_be_read(self):
         with self.fake_gh():
             self.post(PASSED, LANE_FAILED)
