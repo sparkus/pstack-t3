@@ -5,7 +5,7 @@ from collections import namedtuple
 from landing_lib import seam
 from . import required
 from .forge import _CLIENT_ABSENT_REF, delete_queue_branch, remote_branch_is_gone
-from .rollup import OBJECT_ID, PR_STATES, merge_blocker, merge_requested
+from .rollup import OBJECT_ID, PR_STATES, merge_blocker, merge_requested, record_advisory
 
 Line = namedtuple("Line", "entries stale tip")
 
@@ -263,6 +263,8 @@ def poll(store, entry, out):
         checks = merge_blocker(store, entry["pr"])
         if take_pr(store, entry, out.landed, out.bounced):
             return
+        if checks.head == entry["candidate"]:
+            record_advisory(store, entry["id"], entry["candidate"], checks)
         if checks.blocker == "failed":
             bounce_open_pr(store, entry["id"], entry["pr"],
                            f"required checks failed on {entry['pr']}: {checks.detail}", checks.armed)

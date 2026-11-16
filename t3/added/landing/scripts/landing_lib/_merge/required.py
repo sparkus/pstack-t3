@@ -1,7 +1,7 @@
 import json
 import time
 from landing_lib import seam
-from .rollup import BASE_MOVED_RETRIES, BASE_MOVED_WAIT, MERGE_REQUESTED, RULESET_MAX_PAGES, WAITING_FOR_CHECKS, absence_waits, absent_since, base_moved_refusal, merge_blocker, unposted_merge_refusal
+from .rollup import BASE_MOVED_RETRIES, BASE_MOVED_WAIT, MERGE_REQUESTED, RULESET_MAX_PAGES, WAITING_FOR_CHECKS, absence_waits, absent_since, base_moved_refusal, merge_blocker, record_advisory, unposted_merge_refusal
 from . import settle
 
 def _protection_contexts(store):
@@ -148,6 +148,7 @@ def request_merge(store, ident, out):
     checks = merge_blocker(store, url)
     if checks.head != entry["candidate"]:
         return False
+    record_advisory(store, ident, entry["candidate"], checks)
     if checks.blocker == "review":
         settle.pause_for_review(store, url, checks.detail, disarm=False)
     waiting = checks.blocker == "pending"

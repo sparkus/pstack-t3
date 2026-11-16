@@ -109,7 +109,8 @@ def run(argv):
         text = init(args.repo, args.trunk, args.mode, args.remote, args.base, args.check, args.setup, args.batch, args.timeout,
                     args.merge_method, args.cap, args.generated, args.rebuild, args.author_policy, pr_item_line,
                     args.heartbeat_ms, args.merge_heartbeat_ms, args.generated_map,
-                    size_max_tokens=args.max_file_tokens, size_baseline=args.size_baseline)
+                    size_max_tokens=args.max_file_tokens, size_baseline=args.size_baseline,
+                    advisory_suffix=args.advisory_suffix)
         with Store.for_repo(args.repo) as store:
             warning = no_checks_note(store.contract)
         if warning:
@@ -184,6 +185,8 @@ def run(argv):
             if store.contract.get("sizeMaxTokens") is not None:
                 payload["sizeMaxTokens"] = store.contract.get("sizeMaxTokens")
                 payload["sizeBaseline"] = store.contract.get("sizeBaseline")
+            if store.contract.get("advisorySuffix"):
+                payload["advisorySuffix"] = store.contract["advisorySuffix"]
             return json.dumps(payload, indent=2, sort_keys=True), 0
         line = status(store, args.id)
         if not args.id:
@@ -192,7 +195,8 @@ def run(argv):
             item_note = pr_item_line_note(store.contract)
             heartbeat = heartbeat_note(store.contract)
             size = size_note(store.contract)
-            text = " ".join(part for part in (note, policy_note, item_note, heartbeat, size) if part)
+            advisory = advisory_suffix_note(store.contract)
+            text = " ".join(part for part in (note, policy_note, item_note, heartbeat, size, advisory) if part)
             if text:
                 line = f"{line} {text}"
             warning = no_checks_note(store.contract)

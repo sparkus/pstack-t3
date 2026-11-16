@@ -92,6 +92,13 @@ def size_baseline_value(passed, stored):
         raise seam.LandError(f"size baseline {passed!r} must be a repository-relative path with no '.', '..', or empty component")
     return text
 
+def advisory_suffix_note(contract):
+    """The advisory check suffix for repo status. Empty when the contract sets none."""
+    suffix = contract.get("advisorySuffix")
+    if not suffix:
+        return ""
+    return f"checks named *{suffix} are advisory unless required"
+
 def size_note(contract):
     """The stored size limit for repo status. Empty when the contract sets none."""
     maximum = contract.get("sizeMaxTokens")
@@ -101,7 +108,7 @@ def size_note(contract):
 
 def init(path, trunk, mode, remote, base, checks, setup, batch, timeout, merge_method=None, cap=None, generated=None, rebuild=None,
          author_policy=None, pr_item_line=None, heartbeat_ms=None, merge_heartbeat_ms=None, generated_map=None,
-         size_max_tokens=None, size_baseline=None):
+         size_max_tokens=None, size_baseline=None, advisory_suffix=None):
     mode = seam.LEGACY_MODES.get(mode, mode)
     for flag, value, floor in (("--heartbeat-ms", heartbeat_ms, HEARTBEAT_MS),
                                ("--merge-heartbeat-ms", merge_heartbeat_ms, MERGE_HEARTBEAT_MS)):
@@ -205,6 +212,11 @@ def init(path, trunk, mode, remote, base, checks, setup, batch, timeout, merge_m
                 db.execute("INSERT OR REPLACE INTO contract VALUES ('sizeMaxTokens', ?)", (json.dumps(size_max_tokens),))
             if baseline_to_store is not None:
                 db.execute("INSERT OR REPLACE INTO contract VALUES ('sizeBaseline', ?)", (json.dumps(baseline_to_store),))
+            # The advisory suffix stays absent until the flag sets it, so a repository that never passes it reads every check as before.
+            if advisory_suffix:
+                db.execute("INSERT OR REPLACE INTO contract VALUES ('advisorySuffix', ?)", (json.dumps(advisory_suffix),))
+            elif advisory_suffix is not None:
+                db.execute("DELETE FROM contract WHERE key = 'advisorySuffix'")
             # The lane ref moves before COMMIT, so a refused ref rolls the contract back with it.
             if lane_sha:
                 created = seam.git("update-ref", lane, lane_sha, "", cwd=repo, check=False)

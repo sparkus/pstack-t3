@@ -1,0 +1,2 @@
+- kind feature
+- `land.py init --advisory-suffix "(Observe)"` makes merge mode read a posted check whose name ends in that text as advisory. Its failure, cancellation, timeout, or pending run never bounces or holds the entry, unless the trunk requires that check by name or the required checks cannot be read. `status E<n>` and `status --holder <h> --json` show the advisory results. A repository that never passes the flag reads every check as before

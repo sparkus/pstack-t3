@@ -143,14 +143,23 @@ def holder_status(store, holder, sha=None):
 
 def holder_json(store, holder, sha=None):
     """One JSON object per entry of one holder, each holding its id, state, holder, sha, and note."""
-    return json.dumps(
-        [
-            {"id": seam.entry_label(row["id"]), "state": row["state"], "holder": row["holder"],
-             "sha": row["sha"], "note": row["note"]}
-            for row in holder_rows(store, holder, sha)
-        ],
-        indent=2,
-    )
+    rows = []
+    for row in holder_rows(store, holder, sha):
+        item = {"id": seam.entry_label(row["id"]), "state": row["state"], "holder": row["holder"],
+                "sha": row["sha"], "note": row["note"]}
+        advisory = seam.advisory_results(store, row)
+        if advisory:
+            item["advisory"] = [{"name": name, "result": result} for name, result in advisory]
+        rows.append(item)
+    return json.dumps(rows, indent=2)
+
+
+def entry_advisory_note(store, row):
+    """The advisory check results last read for this entry, or empty."""
+    advisory = seam.advisory_results(store, row)
+    if not advisory:
+        return ""
+    return "advisory checks, never a blocker: " + "; ".join(f"{name} {result or 'unknown'}" for name, result in advisory)
 
 
 def status(store, ident=None):
@@ -159,7 +168,7 @@ def status(store, ident=None):
         row = store.db.execute("SELECT * FROM entry WHERE id = ?", (number,)).fetchone()
         if not row:
             raise seam.LandError(f"no {seam.entry_label(number)}")
-        detail = [f"landed as {row['landed'][:12]}" if row["landed"] else "", row["pr"], row["note"]]
+        detail = [f"landed as {row['landed'][:12]}" if row["landed"] else "", row["pr"], row["note"], entry_advisory_note(store, row)]
         return f"{seam.entry_label(row['id'])} {row['state']} ({row['holder']}, {row['branch']})" + "".join(f". {part}" for part in detail if part)
     states = dict(store.db.execute("SELECT state, count(*) FROM entry GROUP BY state").fetchall())
     live = seam.in_flight(store.db)

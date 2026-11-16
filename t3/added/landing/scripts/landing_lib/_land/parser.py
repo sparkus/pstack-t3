@@ -51,6 +51,11 @@ def build_parser(description, exclusive_cap=_DEFAULT_EXCLUSIVE_CAP, modes=_DEFAU
     p.add_argument("--merge-heartbeat-ms", type=int, default=None, dest="merge_heartbeat_ms",
                    help="merge wait schedule interval in milliseconds. Omitted, a rerun keeps the stored value and a first init stores 900000. "
                         "A value below 900000 is refused before the contract changes")
+    p.add_argument("--advisory-suffix", default=None, dest="advisory_suffix",
+                   help="merge mode: a posted check whose name ends in this text, such as (Observe), is advisory. Its failure "
+                        "or pending run never bounces or holds an entry, unless the trunk requires that check by name or the required checks cannot be read. "
+                        "status E<n> and status --holder --json show its result. An empty value clears it. Omitted, a rerun "
+                        "keeps the stored suffix and a first init stores none, so every failed check bounces as before")
     p.add_argument("--cap", type=int, help="most changes in flight on the repository at once; 0 clears it")
     p.add_argument("--generated", metavar="PATHS", default=None,
                    help="comma-separated repository-relative paths the queue treats as generated output, such as skills,docs/cli. "
@@ -168,7 +173,7 @@ def build_parser(description, exclusive_cap=_DEFAULT_EXCLUSIVE_CAP, modes=_DEFAU
     p.add_argument("--holder", help="list this holder's entries; a value ending in / matches every holder under it")
     p.add_argument("--sha", help="with --holder, only entries at exactly this commit")
     p.add_argument("--json", action="store_true",
-                   help="print JSON instead of the lines. With --holder it is a list of that holder's entries, one object each holding id, state, holder, sha, and note. Alone it is one object holding mode, trunk, generated, rebuild, map, plus size keys only while the contract sets a limit")
+                   help="print JSON instead of the lines. With --holder it is a list of that holder's entries, one object each holding id, state, holder, sha, and note, plus advisory, a list of name and result objects, only when the queue read advisory checks for that entry's candidate. Alone it is one object holding mode, trunk, generated, rebuild, map, plus size keys only while the contract sets a limit and advisorySuffix only while the contract sets one")
 
     size_help = ("check changed worktree file sizes; --staged reads changed index files; "
                  "--all reads tracked and unignored untracked files. Seed a missing baseline, except with --shrink, which refuses.\n\n"

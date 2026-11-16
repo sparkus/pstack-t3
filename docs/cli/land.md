@@ -21,7 +21,7 @@ Land many agents' work on one repository through one queue.
 ## land.py init
 
 ```text
-land.py [flags] init --trunk TRUNK --mode MODE [--remote REMOTE] [--base BASE] [--check CHECK] [--setup SETUP] [--batch BATCH] [--timeout TIMEOUT] [--merge-method MERGE_METHOD] [--author-policy AUTHOR_POLICY] [--pr-item-line PR_ITEM_LINE] [--heartbeat-ms HEARTBEAT_MS] [--merge-heartbeat-ms MERGE_HEARTBEAT_MS] [--cap CAP] [--generated PATHS] [--generated-map MAP] [--rebuild COMMAND] [--max-file-tokens MAX_FILE_TOKENS] [--size-baseline PATH]
+land.py [flags] init --trunk TRUNK --mode MODE [--remote REMOTE] [--base BASE] [--check CHECK] [--setup SETUP] [--batch BATCH] [--timeout TIMEOUT] [--merge-method MERGE_METHOD] [--author-policy AUTHOR_POLICY] [--pr-item-line PR_ITEM_LINE] [--heartbeat-ms HEARTBEAT_MS] [--merge-heartbeat-ms MERGE_HEARTBEAT_MS] [--advisory-suffix ADVISORY_SUFFIX] [--cap CAP] [--generated PATHS] [--generated-map MAP] [--rebuild COMMAND] [--max-file-tokens MAX_FILE_TOKENS] [--size-baseline PATH]
 ```
 
 write the repository's landing contract
@@ -41,6 +41,7 @@ write the repository's landing contract
 | `--pr-item-line PR_ITEM_LINE` |  | `on`, `off` |  | whether the queue appends the Kind and Goal line to the PR body. on adds the line when the item has one, after one blank line when the body has text or as the whole body otherwise. off sends the submitted title and body unchanged. Omitted, a rerun keeps the stored setting and a first init stores off. An unknown value is refused before the contract changes |
 | `--heartbeat-ms HEARTBEAT_MS` |  |  |  | fallback schedule interval in milliseconds. Omitted, a rerun keeps the stored value and a first init stores 3600000. A value below 3600000 is refused before the contract changes |
 | `--merge-heartbeat-ms MERGE_HEARTBEAT_MS` |  |  |  | merge wait schedule interval in milliseconds. Omitted, a rerun keeps the stored value and a first init stores 900000. A value below 900000 is refused before the contract changes |
+| `--advisory-suffix ADVISORY_SUFFIX` |  |  |  | merge mode: a posted check whose name ends in this text, such as (Observe), is advisory. Its failure or pending run never bounces or holds an entry, unless the trunk requires that check by name or the required checks cannot be read. status E\<n> and status --holder --json show its result. An empty value clears it. Omitted, a rerun keeps the stored suffix and a first init stores none, so every failed check bounces as before |
 | `--cap CAP` |  |  |  | most changes in flight on the repository at once; 0 clears it |
 | `--generated PATHS` |  |  |  | comma-separated repository-relative paths the queue treats as generated output, such as skills,docs/cli. An empty value clears the stored list. Omitted, a rerun keeps the stored list and a first init stores none |
 | `--generated-map MAP` |  |  |  | comma-separated src equals dst rules the fire expansion uses, with a trailing ! for index pages and a trailing ^ to skip doc items, such as src=dst!^ for a catalog page. An empty value clears the stored map. Omitted, a rerun keeps the stored map and a first init stores none |
@@ -301,7 +302,7 @@ land.py [flags] status [--holder HOLDER] [--sha SHA] [--json] [id]
 | `id` |  |  |  |  |
 | `--holder HOLDER` |  |  |  | list this holder's entries; a value ending in / matches every holder under it |
 | `--sha SHA` |  |  |  | with --holder, only entries at exactly this commit |
-| `--json` |  |  |  | print JSON instead of the lines. With --holder it is a list of that holder's entries, one object each holding id, state, holder, sha, and note. Alone it is one object holding mode, trunk, generated, rebuild, map, plus size keys only while the contract sets a limit |
+| `--json` |  |  |  | print JSON instead of the lines. With --holder it is a list of that holder's entries, one object each holding id, state, holder, sha, and note, plus advisory, a list of name and result objects, only when the queue read advisory checks for that entry's candidate. Alone it is one object holding mode, trunk, generated, rebuild, map, plus size keys only while the contract sets a limit and advisorySuffix only while the contract sets one |
 
 ## land.py size
 
